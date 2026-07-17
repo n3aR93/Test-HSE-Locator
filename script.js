@@ -1,131 +1,150 @@
-// ================================
+// ===============================
 // HSE SITE FINDER
-// Complete script
-// ================================
+// ===============================
 
 
-// Search box typing
-document
-.getElementById("searchBox")
-.addEventListener("input", function(){
-
-    let value = this.value.trim();
-
-    if(value.length < 3){
-
-        document.getElementById("suggestions").innerHTML = "";
-
-        return;
-
-    }
+const searchBox =
+document.getElementById("searchBox");
 
 
-    searchSites(value);
+
+searchBox.addEventListener(
+"input",
+function(){
+
+let value=this.value.trim();
+
+
+if(value.length < 3){
+
+document.getElementById("suggestions").innerHTML="";
+
+return;
+
+}
+
+
+searchSites(value);
+
+
+});
+
+
+
+// ENTER KEY SEARCH
+
+searchBox.addEventListener(
+"keypress",
+function(e){
+
+if(e.key==="Enter"){
+
+manualSearch();
+
+}
 
 });
 
 
 
 
-// ================================
-// Manual search
-// ================================
 
-async function searchSites(search){
-
-    let response =
-    await fetch("sites.json");
+// ===============================
+// LIVE SUGGESTIONS
+// ===============================
 
 
-    let sites =
-    await response.json();
+async function searchSites(text){
 
 
+let response =
+await fetch("sites.json");
 
-    search =
-    search.replace(/\s/g,"")
-    .toUpperCase();
+
+let sites =
+await response.json();
 
 
 
-    let matches =
-    sites.filter(site=>{
-
-
-        let postcode =
-        site.postcode
-        .replace(/\s/g,"")
-        .toUpperCase();
-
-
-        let name =
-        site.site
-        .toUpperCase();
+text =
+text.toUpperCase();
 
 
 
-        return postcode.includes(search)
-        ||
-        name.includes(search);
+let matches =
+sites.filter(site=>{
 
 
-    });
+return (
+
+site.site
+.toUpperCase()
+.includes(text)
+
+||
+
+site.postcode
+.toUpperCase()
+.includes(text)
+
+);
+
+
+});
 
 
 
-    showSuggestions(matches);
+showSuggestions(matches);
+
 
 }
 
 
 
 
-
-// ================================
-// Show suggestions
-// ================================
 
 function showSuggestions(matches){
 
 
-    let box =
-    document.getElementById("suggestions");
+let box =
+document.getElementById("suggestions");
 
 
-    box.innerHTML = "";
+box.innerHTML="";
 
 
 
-    matches.forEach(site=>{
+matches.forEach(site=>{
 
 
-        let div =
-        document.createElement("div");
+let div =
+document.createElement("div");
 
 
-        div.className =
-        "suggestion";
+div.className="suggestion";
 
 
-        div.innerHTML =
-        `
-        <strong>${site.site}</strong>
-        <br>
-        ${site.postcode}
-        `;
+div.innerHTML=
+`
+<b>${site.site}</b>
+<br>
+${site.postcode}
+`;
 
 
-        div.onclick=function(){
 
-            openPDF(site.pdf);
+div.onclick=function(){
 
-        };
+openPDF(site.pdf);
 
-
-        box.appendChild(div);
+};
 
 
-    });
+
+box.appendChild(div);
+
+
+});
 
 
 }
@@ -135,144 +154,176 @@ function showSuggestions(matches){
 
 
 
-// ================================
-// GPS LOCATION
-// ================================
+// ===============================
+// SEARCH BUTTON
+// ===============================
+
+
+async function manualSearch(){
+
+
+let input =
+searchBox.value.trim();
+
+
+
+let result =
+document.getElementById("result");
+
+
+
+if(input===""){
+
+
+result.innerHTML=
+"Please enter postcode or address";
+
+
+return;
+
+
+}
+
+
+
+// postcode format check
+
+let postcodePattern =
+/^[A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2}$/i;
+
+
+
+if(postcodePattern.test(input)===false){
+
+
+result.innerHTML=
+`
+❌ Invalid postcode format
+<br><br>
+Please check and try again
+`;
+
+
+return;
+
+
+}
+
+
+
+findSiteByPostcode(input);
+
+
+
+}
+
+
+
+
+
+
+
+
+// ===============================
+// LOCATION BUTTON
+// ===============================
+
 
 function getLocation(){
 
 
-    let result =
-    document.getElementById("result");
+let result =
+document.getElementById("result");
 
 
 
-    result.innerHTML =
-    `
-    📍 Finding your location...
-    <br><br>
-    Please wait...
-    `;
+result.innerHTML=
+`
+📍 Finding location...
+<br>
+Please wait...
+`;
 
 
 
-    if(!navigator.geolocation){
+navigator.geolocation.getCurrentPosition(
 
+async function(position){
 
-        result.innerHTML =
-        "❌ Location is not supported";
 
+let lat =
+position.coords.latitude;
 
-        return;
 
-    }
+let lon =
+position.coords.longitude;
 
 
 
-    navigator.geolocation.getCurrentPosition(
+try{
 
-        async function(position){
 
+let response =
+await fetch(
+`https://api.postcodes.io/postcodes?lat=${lat}&lon=${lon}`
+);
 
-            let lat =
-            position.coords.latitude;
 
 
-            let lon =
-            position.coords.longitude;
+let data =
+await response.json();
 
 
 
-            try{
+if(!data.result){
 
+throw "no postcode";
 
-                result.innerHTML =
-                `
-                📍 Location found
-                <br>
-                Checking postcode...
-                `;
+}
 
 
 
-                // Convert GPS to postcode
+let postcode =
+data.result[0].postcode;
 
-                let response =
-                await fetch(
-                `https://api.postcodes.io/postcodes?lat=${lat}&lon=${lon}`
-                );
 
 
+findSiteByPostcode(postcode);
 
-                let data =
-                await response.json();
 
 
+}
 
-                if(!data.result || data.result.length===0){
+catch{
 
-                    throw "No postcode";
 
-                }
+result.innerHTML=
+`
+❌ Could not find postcode
+`;
 
+}
 
 
-                let postcode =
-                data.result[0].postcode;
 
+},
 
 
-                result.innerHTML =
-                `
-                ✅ Found postcode:
-                <br>
-                ${postcode}
-                <br><br>
-                Searching HSE documents...
-                `;
 
+function(){
 
 
-                findSiteByPostcode(postcode);
+result.innerHTML=
+`
+❌ Location permission denied
+`;
 
+}
 
 
-            }
 
+);
 
-            catch(error){
-
-
-                result.innerHTML =
-                `
-                ❌ Could not find postcode.
-                <br>
-                Please type it manually.
-                `;
-
-
-            }
-
-
-
-        },
-
-
-        function(){
-
-
-            result.innerHTML =
-            `
-            ❌ Location permission denied.
-            <br>
-            Please type postcode.
-            `;
-
-
-        }
-
-
-    );
 
 
 }
@@ -282,135 +333,126 @@ function getLocation(){
 
 
 
-// ================================
-// Find PDF by postcode
-// ================================
+
+// ===============================
+// FIND RAMS
+// ===============================
+
 
 async function findSiteByPostcode(postcode){
 
 
 
-    let result =
-    document.getElementById("result");
+let result =
+document.getElementById("result");
 
 
 
-    let response =
-    await fetch("sites.json");
+postcode =
+postcode
+.replace(/\s/g,"")
+.toUpperCase();
 
 
-    let sites =
-    await response.json();
 
+let response =
+await fetch("sites.json");
 
 
+let sites =
+await response.json();
 
-    let cleanPostcode =
-    postcode
-    .replace(/\s/g,"")
-    .toUpperCase();
 
 
+let matches =
+sites.filter(site=>{
 
-    let matches =
-    sites.filter(site=>{
 
+return site.postcode
+.replace(/\s/g,"")
+.toUpperCase()
+===postcode;
 
-        let sitePostcode =
-        site.postcode
-        .replace(/\s/g,"")
-        .toUpperCase();
 
 
+});
 
-        return sitePostcode === cleanPostcode;
 
 
-    });
 
 
+if(matches.length===0){
 
 
+result.innerHTML=
+`
+❌ No RAMS found for this address
+<br><br>
+${postcode}
+`;
 
 
-    if(matches.length===0){
+return;
 
+}
 
-        result.innerHTML =
-        `
-        ❌ No HSE site found
-        <br><br>
-        ${postcode}
-        `;
 
 
-        return;
 
-    }
 
+if(matches.length===1){
 
 
+result.innerHTML=
+`
+✅ RAMS found
+<br>
+Opening document...
+`;
 
 
-    if(matches.length===1){
 
+setTimeout(()=>{
 
-        result.innerHTML =
-        `
-        ✅ Site found
-        <br><br>
-        Opening document...
-        `;
 
+openPDF(matches[0].pdf);
 
 
-        setTimeout(()=>{
+},1000);
 
 
-            openPDF(matches[0].pdf);
 
+return;
 
-        },1000);
 
+}
 
 
-        return;
 
-    }
 
 
+let html=
+`
+Multiple sites found:
+<br><br>
+`;
 
 
 
+matches.forEach(site=>{
 
-    // Multiple sites
 
-    let html =
-    `
-    Multiple sites found:
-    <br><br>
-    `;
+html+=
+`
+<button onclick="openPDF('${site.pdf}')">
+${site.site}
+</button>
+`;
 
+});
 
 
-    matches.forEach(site=>{
-
-
-        html +=
-        `
-        <button onclick="openPDF('${site.pdf}')">
-        ${site.site}
-        </button>
-        <br>
-        `;
-
-
-    });
-
-
-
-    result.innerHTML = html;
-
+result.innerHTML=html;
 
 
 }
@@ -421,14 +463,10 @@ async function findSiteByPostcode(postcode){
 
 
 
-// ================================
-// Open PDF
-// ================================
-
 function openPDF(link){
 
 
-    window.open(link,"_blank");
+window.open(link,"_blank");
 
 
 }
