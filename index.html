@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+<title>HSE Site Finder</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>HSE Site Finder</h1>
+
+<p>
+Find your site information quickly
+</p>
+
+
+<input 
+id="searchBox"
+placeholder="Search postcode or address..."
+autocomplete="off">
+
+
+<div id="suggestions"></div>
+
+
+<button class="location" onclick="getLocation()">
+📍 Use My Location
+</button>
+
+
+<div id="result"></div>
+
+
+</div>
+
+
+<script src="script.js"></script>
+
+</body>
+
+</html>
