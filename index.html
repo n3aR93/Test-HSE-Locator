@@ -1,4 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>HSE RAMS Finder</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+
+<body>
+
+
+<div class="container">
+
+
 <h1>HSE RAMS Finder</h1>
+
 
 <div id="result">
 📍 Checking your location...
@@ -7,22 +29,34 @@ Please wait...
 </div>
 
 
-<button onclick="getLocation()">
-Try location again
-</button>
 
 
-<br><br>
+<div class="manual">
 
 
-<input id="searchBox" placeholder="Enter postcode or address">
+<input 
+id="searchBox"
+placeholder="Enter postcode or address">
+
 
 <button onclick="manualSearch()">
 Search
 </button>
 
 
+</div>
+
+
+
 <div id="suggestions"></div>
 
 
+</div>
+
+
 <script src="script.js"></script>
+
+
+</body>
+
+</html>
