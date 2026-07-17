@@ -1,164 +1,166 @@
-// ======================================
-// HSE SITE FINDER - script.js
-// ======================================
+// ================================
+// HSE SITE FINDER
+// Complete script
+// ================================
 
 
-// -----------------------------
-// Manual search box autocomplete
-// -----------------------------
+// Search box typing
+document
+.getElementById("searchBox")
+.addEventListener("input", function(){
 
-const searchBox = document.getElementById("searchBox");
-const suggestions = document.getElementById("suggestions");
+    let value = this.value.trim();
 
+    if(value.length < 3){
 
-if (searchBox) {
+        document.getElementById("suggestions").innerHTML = "";
 
-    searchBox.addEventListener("input", async function () {
+        return;
 
-
-        let text = searchBox.value
-            .toUpperCase()
-            .trim();
+    }
 
 
-        suggestions.innerHTML = "";
+    searchSites(value);
 
-
-        if (text.length < 2) {
-            return;
-        }
-
-
-        let response = await fetch("sites.json");
-
-        let sites = await response.json();
+});
 
 
 
-        let matches = sites.filter(site =>
 
-            site.postcode
-                .toUpperCase()
-                .includes(text)
+// ================================
+// Manual search
+// ================================
 
-            ||
+async function searchSites(search){
 
-            site.site
-                .toUpperCase()
-                .includes(text)
+    let response =
+    await fetch("sites.json");
 
-            ||
 
-            (site.address &&
-            site.address
-                .toUpperCase()
-                .includes(text))
-
-        );
+    let sites =
+    await response.json();
 
 
 
-        if (matches.length === 0) {
-
-            suggestions.innerHTML =
-                "No sites found";
-
-            return;
-
-        }
+    search =
+    search.replace(/\s/g,"")
+    .toUpperCase();
 
 
 
-        matches.forEach(function(site){
+    let matches =
+    sites.filter(site=>{
 
 
-            let option =
-                document.createElement("div");
+        let postcode =
+        site.postcode
+        .replace(/\s/g,"")
+        .toUpperCase();
 
 
-            option.className =
-                "suggestion";
-
-
-            option.innerHTML =
-
-                "<b>" +
-                site.site +
-                "</b><br>" +
-
-                site.postcode +
-
-                "<br>" +
-
-                (site.address || "");
+        let name =
+        site.site
+        .toUpperCase();
 
 
 
-            option.onclick = function(){
-
-
-                openPDF(site);
-
-
-            };
-
-
-
-            suggestions.appendChild(option);
-
-
-        });
-
+        return postcode.includes(search)
+        ||
+        name.includes(search);
 
 
     });
 
-}
 
 
-
-// -----------------------------
-// Open PDF
-// -----------------------------
-
-function openPDF(site) {
-
-
-    document.getElementById("result").innerHTML =
-
-        "Opening:<br><b>" +
-        site.site +
-        "</b>";
-
-
-
-    setTimeout(function(){
-
-
-        window.location.href =
-            site.pdf;
-
-
-    },1000);
-
+    showSuggestions(matches);
 
 }
 
 
 
-// -----------------------------
-// GPS LOCATION BUTTON
-// -----------------------------
+
+
+// ================================
+// Show suggestions
+// ================================
+
+function showSuggestions(matches){
+
+
+    let box =
+    document.getElementById("suggestions");
+
+
+    box.innerHTML = "";
+
+
+
+    matches.forEach(site=>{
+
+
+        let div =
+        document.createElement("div");
+
+
+        div.className =
+        "suggestion";
+
+
+        div.innerHTML =
+        `
+        <strong>${site.site}</strong>
+        <br>
+        ${site.postcode}
+        `;
+
+
+        div.onclick=function(){
+
+            openPDF(site.pdf);
+
+        };
+
+
+        box.appendChild(div);
+
+
+    });
+
+
+}
+
+
+
+
+
+
+// ================================
+// GPS LOCATION
+// ================================
 
 function getLocation(){
 
 
-    if (!navigator.geolocation) {
+    let result =
+    document.getElementById("result");
 
 
-        alert(
-            "Location is not supported on this device."
-        );
+
+    result.innerHTML =
+    `
+    📍 Finding your location...
+    <br><br>
+    Please wait...
+    `;
+
+
+
+    if(!navigator.geolocation){
+
+
+        result.innerHTML =
+        "❌ Location is not supported";
 
 
         return;
@@ -169,51 +171,88 @@ function getLocation(){
 
     navigator.geolocation.getCurrentPosition(
 
-        function(position){
+        async function(position){
 
 
-            let latitude =
-                position.coords.latitude;
+            let lat =
+            position.coords.latitude;
 
 
-            let longitude =
-                position.coords.longitude;
+            let lon =
+            position.coords.longitude;
 
 
 
-            document.getElementById("result").innerHTML =
-
-                "Location found:<br>" +
-
-                "Latitude: " +
-                latitude +
-
-                "<br>" +
-
-                "Longitude: " +
-                longitude +
-
-                "<br><br>" +
-
-                "Next step: converting location to postcode...";
+            try{
 
 
-            /*
-            
-            NEXT STEP:
-            
-            Latitude + Longitude
-                    |
-                    v
-            Full postcode
-                    |
-                    v
-            Search sites.json
-                    |
-                    v
-            Open PDF
-            
-            */
+                result.innerHTML =
+                `
+                📍 Location found
+                <br>
+                Checking postcode...
+                `;
+
+
+
+                // Convert GPS to postcode
+
+                let response =
+                await fetch(
+                `https://api.postcodes.io/postcodes?lat=${lat}&lon=${lon}`
+                );
+
+
+
+                let data =
+                await response.json();
+
+
+
+                if(!data.result || data.result.length===0){
+
+                    throw "No postcode";
+
+                }
+
+
+
+                let postcode =
+                data.result[0].postcode;
+
+
+
+                result.innerHTML =
+                `
+                ✅ Found postcode:
+                <br>
+                ${postcode}
+                <br><br>
+                Searching HSE documents...
+                `;
+
+
+
+                findSiteByPostcode(postcode);
+
+
+
+            }
+
+
+            catch(error){
+
+
+                result.innerHTML =
+                `
+                ❌ Could not find postcode.
+                <br>
+                Please type it manually.
+                `;
+
+
+            }
+
 
 
         },
@@ -222,9 +261,12 @@ function getLocation(){
         function(){
 
 
-            alert(
-                "Could not get your location. Please search manually."
-            );
+            result.innerHTML =
+            `
+            ❌ Location permission denied.
+            <br>
+            Please type postcode.
+            `;
 
 
         }
@@ -237,26 +279,70 @@ function getLocation(){
 
 
 
-// -----------------------------
-// Search button (optional)
-// -----------------------------
-
-async function findPostcode(){
-
-
-    let text =
-        document.getElementById("searchBox")
-        .value
-        .toUpperCase()
-        .trim();
 
 
 
-    if(text === ""){
+// ================================
+// Find PDF by postcode
+// ================================
 
-        alert(
-            "Please enter postcode or site name"
-        );
+async function findSiteByPostcode(postcode){
+
+
+
+    let result =
+    document.getElementById("result");
+
+
+
+    let response =
+    await fetch("sites.json");
+
+
+    let sites =
+    await response.json();
+
+
+
+
+    let cleanPostcode =
+    postcode
+    .replace(/\s/g,"")
+    .toUpperCase();
+
+
+
+    let matches =
+    sites.filter(site=>{
+
+
+        let sitePostcode =
+        site.postcode
+        .replace(/\s/g,"")
+        .toUpperCase();
+
+
+
+        return sitePostcode === cleanPostcode;
+
+
+    });
+
+
+
+
+
+
+    if(matches.length===0){
+
+
+        result.innerHTML =
+        `
+        ❌ No HSE site found
+        <br><br>
+        ${postcode}
+        `;
+
 
         return;
 
@@ -264,87 +350,85 @@ async function findPostcode(){
 
 
 
-    let response =
-        await fetch("sites.json");
 
 
-    let sites =
-        await response.json();
-
-
-
-    let matches =
-        sites.filter(site =>
-
-            site.postcode
-            .toUpperCase()
-            === text
-
-        );
-
-
-
-    if(matches.length === 1){
-
-
-        openPDF(matches[0]);
-
-
-    }
-
-
-    else if(matches.length > 1){
-
-
-        let result =
-            document.getElementById("result");
+    if(matches.length===1){
 
 
         result.innerHTML =
-            "<h3>Select site:</h3>";
+        `
+        ✅ Site found
+        <br><br>
+        Opening document...
+        `;
 
 
 
-        matches.forEach(site=>{
+        setTimeout(()=>{
 
 
-            let button =
-                document.createElement("button");
+            openPDF(matches[0].pdf);
 
 
-            button.innerHTML =
-                site.site;
-
-
-
-            button.onclick=function(){
-
-
-                openPDF(site);
-
-
-            };
+        },1000);
 
 
 
-            result.appendChild(button);
-
-
-        });
-
+        return;
 
     }
 
 
-    else {
 
 
-        document.getElementById("result").innerHTML =
-
-            "No matching site found";
 
 
-    }
+    // Multiple sites
+
+    let html =
+    `
+    Multiple sites found:
+    <br><br>
+    `;
+
+
+
+    matches.forEach(site=>{
+
+
+        html +=
+        `
+        <button onclick="openPDF('${site.pdf}')">
+        ${site.site}
+        </button>
+        <br>
+        `;
+
+
+    });
+
+
+
+    result.innerHTML = html;
+
+
+
+}
+
+
+
+
+
+
+
+// ================================
+// Open PDF
+// ================================
+
+function openPDF(link){
+
+
+    window.open(link,"_blank");
 
 
 }
