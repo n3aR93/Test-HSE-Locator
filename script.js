@@ -1,6 +1,48 @@
-// ===============================
-// HSE SITE FINDER
-// ===============================
+// =====================================
+// HSE RAMS FINDER - SHAREPOINT VERSION
+// =====================================
+
+
+const LIST_URL =
+"https://northdown.sharepoint.com/sites/IPG/_api/web/lists/GetByTitle('RAMS Sites')/items";
+
+
+
+
+// =====================================
+// GET DATA FROM MICROSOFT LIST
+// =====================================
+
+
+async function getSites(){
+
+
+    let response = await fetch(
+        LIST_URL,
+        {
+            headers:{
+                "Accept":"application/json;odata=nometadata"
+            }
+        }
+    );
+
+
+    let data = await response.json();
+
+
+    return data.value;
+
+
+}
+
+
+
+
+
+
+// =====================================
+// SEARCH BOX
+// =====================================
 
 
 const searchBox =
@@ -12,36 +54,50 @@ searchBox.addEventListener(
 "input",
 function(){
 
-let value=this.value.trim();
+
+    let value =
+    this.value.trim();
 
 
-if(value.length < 3){
 
-document.getElementById("suggestions").innerHTML="";
-
-return;
-
-}
+    if(value.length < 3){
 
 
-searchSites(value);
+        document.getElementById("suggestions").innerHTML="";
+
+
+        return;
+
+    }
+
+
+
+    searchSites(value);
+
 
 
 });
 
 
 
-// ENTER KEY SEARCH
+
+
+
+// ENTER KEY
 
 searchBox.addEventListener(
 "keypress",
 function(e){
 
-if(e.key==="Enter"){
 
-manualSearch();
+    if(e.key==="Enter"){
 
-}
+
+        manualSearch();
+
+
+    }
+
 
 });
 
@@ -49,55 +105,44 @@ manualSearch();
 
 
 
-// ===============================
+
+// =====================================
 // LIVE SUGGESTIONS
-// ===============================
+// =====================================
 
 
 async function searchSites(text){
 
 
-let response =
-await fetch("sites.json");
-
-
-let sites =
-await response.json();
+    let sites =
+    await getSites();
 
 
 
-text =
-text.toUpperCase();
+    text =
+    text.toUpperCase();
 
 
 
-let matches =
-sites.filter(site=>{
+    let matches =
+    sites.filter(site=>{
 
 
-return (
-
-site.site
-.toUpperCase()
-.includes(text)
-
-||
-
-site.postcode
-.toUpperCase()
-.includes(text)
-
-);
+        return site.Title
+        .toUpperCase()
+        .includes(text);
 
 
-});
+    });
 
 
 
-showSuggestions(matches);
+    showSuggestions(matches);
+
 
 
 }
+
 
 
 
@@ -106,45 +151,52 @@ showSuggestions(matches);
 function showSuggestions(matches){
 
 
-let box =
-document.getElementById("suggestions");
+    let box =
+    document.getElementById("suggestions");
 
 
-box.innerHTML="";
-
-
-
-matches.forEach(site=>{
-
-
-let div =
-document.createElement("div");
-
-
-div.className="suggestion";
-
-
-div.innerHTML=
-`
-<b>${site.site}</b>
-<br>
-${site.postcode}
-`;
+    box.innerHTML="";
 
 
 
-div.onclick=function(){
-
-openPDF(site.pdf);
-
-};
+    matches.forEach(site=>{
 
 
+        let div =
+        document.createElement("div");
 
-box.appendChild(div);
 
 
-});
+        div.className =
+        "suggestion";
+
+
+
+        div.innerHTML =
+        `
+        <b>${site.Title}</b>
+        `;
+
+
+
+        div.onclick=function(){
+
+
+            openPDF(
+                site.PDFLink.Url
+            );
+
+
+        };
+
+
+
+        box.appendChild(div);
+
+
+
+    });
+
 
 
 }
@@ -154,64 +206,40 @@ box.appendChild(div);
 
 
 
-// ===============================
+
+
+// =====================================
 // SEARCH BUTTON
-// ===============================
+// =====================================
 
 
 async function manualSearch(){
 
 
-let input =
-searchBox.value.trim();
+    let input =
+    searchBox.value.trim();
 
 
 
-let result =
-document.getElementById("result");
+    let result =
+    document.getElementById("result");
 
 
 
-if(input===""){
+    if(input===""){
 
 
-result.innerHTML=
-"Please enter postcode or address";
+        result.innerHTML =
+        "Please enter address or postcode";
 
 
-return;
+        return;
 
-
-}
-
-
-
-// postcode format check
-
-let postcodePattern =
-/^[A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2}$/i;
+    }
 
 
 
-if(postcodePattern.test(input)===false){
-
-
-result.innerHTML=
-`
-❌ Invalid postcode format
-<br><br>
-Please check and try again
-`;
-
-
-return;
-
-
-}
-
-
-
-findSiteByPostcode(input);
+    findSite(input);
 
 
 
@@ -224,9 +252,9 @@ findSiteByPostcode(input);
 
 
 
-// ===============================
+// =====================================
 // LOCATION BUTTON
-// ===============================
+// =====================================
 
 
 function getLocation(){
@@ -237,72 +265,83 @@ document.getElementById("result");
 
 
 
-result.innerHTML=
+result.innerHTML =
 `
-📍 Finding location...
-<br>
-Please wait...
+<div class="loading">
+📍 Finding your location...
+</div>
 `;
 
 
 
 navigator.geolocation.getCurrentPosition(
 
+
 async function(position){
 
 
-let lat =
-position.coords.latitude;
 
-
-let lon =
-position.coords.longitude;
+    let lat =
+    position.coords.latitude;
 
 
 
-try{
-
-
-let response =
-await fetch(
-`https://api.postcodes.io/postcodes?lat=${lat}&lon=${lon}`
-);
+    let lon =
+    position.coords.longitude;
 
 
 
-let data =
-await response.json();
+
+    try{
+
+
+        let response =
+        await fetch(
+
+        `https://api.postcodes.io/postcodes?lat=${lat}&lon=${lon}`
+
+        );
 
 
 
-if(!data.result){
-
-throw "no postcode";
-
-}
+        let data =
+        await response.json();
 
 
 
-let postcode =
-data.result[0].postcode;
+        if(!data.result){
+
+
+            throw "No postcode";
+
+
+        }
 
 
 
-findSiteByPostcode(postcode);
+        let postcode =
+        data.result[0].postcode;
 
 
 
-}
-
-catch{
+        findSite(postcode);
 
 
-result.innerHTML=
-`
-❌ Could not find postcode
-`;
 
-}
+    }
+
+
+
+    catch(error){
+
+
+        result.innerHTML =
+        `
+        ❌ Could not find postcode
+        `;
+
+
+    }
 
 
 
@@ -313,10 +352,11 @@ result.innerHTML=
 function(){
 
 
-result.innerHTML=
-`
-❌ Location permission denied
-`;
+    result.innerHTML =
+    `
+    ❌ Location permission denied
+    `;
+
 
 }
 
@@ -334,65 +374,154 @@ result.innerHTML=
 
 
 
-// ===============================
-// FIND RAMS
-// ===============================
+
+// =====================================
+// FIND SITE
+// =====================================
 
 
-async function findSiteByPostcode(postcode){
+async function findSite(search){
 
 
-
-let result =
-document.getElementById("result");
-
-
-
-postcode =
-postcode
-.replace(/\s/g,"")
-.toUpperCase();
+    let result =
+    document.getElementById("result");
 
 
 
-let response =
-await fetch("sites.json");
-
-
-let sites =
-await response.json();
+    let sites =
+    await getSites();
 
 
 
-let matches =
-sites.filter(site=>{
 
-
-return site.postcode
-.replace(/\s/g,"")
-.toUpperCase()
-===postcode;
-
-
-
-});
+    search =
+    search
+    .toUpperCase()
+    .replace(/\s/g,"");
 
 
 
 
 
-if(matches.length===0){
+    let matches =
+    sites.filter(site=>{
 
 
-result.innerHTML=
-`
-❌ No RAMS found for this address
-<br><br>
-${postcode}
-`;
+
+        let address =
+        site.Title
+        .toUpperCase()
+        .replace(/\s/g,"");
 
 
-return;
+
+        return address.includes(search);
+
+
+
+    });
+
+
+
+
+
+
+
+    if(matches.length===0){
+
+
+        result.innerHTML =
+        `
+        ❌ No RAMS found
+        <br><br>
+        ${search}
+        `;
+
+
+        return;
+
+
+    }
+
+
+
+
+
+
+
+    if(matches.length===1){
+
+
+
+        result.innerHTML =
+        `
+        ✅ RAMS found
+        <br>
+        Opening PDF...
+        `;
+
+
+
+        setTimeout(()=>{
+
+
+            openPDF(
+                matches[0].PDFLink.Url
+            );
+
+
+
+        },1000);
+
+
+
+        return;
+
+
+    }
+
+
+
+
+
+
+
+
+    let html =
+    `
+    Multiple RAMS found:
+    <br><br>
+    `;
+
+
+
+
+    matches.forEach(site=>{
+
+
+
+        html +=
+        `
+        <button class="siteButton"
+        onclick="openPDF('${site.PDFLink.Url}')">
+
+        ${site.Title}
+
+        </button>
+        <br><br>
+        `;
+
+
+
+    });
+
+
+
+
+    result.innerHTML =
+    html;
+
+
 
 }
 
@@ -400,73 +529,22 @@ return;
 
 
 
-if(matches.length===1){
-
-
-result.innerHTML=
-`
-✅ RAMS found
-<br>
-Opening document...
-`;
-
-
-
-setTimeout(()=>{
-
-
-openPDF(matches[0].pdf);
-
-
-},1000);
-
-
-
-return;
-
-
-}
 
 
 
 
-
-let html=
-`
-Multiple sites found:
-<br><br>
-`;
-
-
-
-matches.forEach(site=>{
-
-
-html+=
-`
-<button onclick="openPDF('${site.pdf}')">
-${site.site}
-</button>
-`;
-
-});
-
-
-result.innerHTML=html;
-
-
-}
-
-
-
-
-
+// =====================================
+// OPEN PDF
+// =====================================
 
 
 function openPDF(link){
 
 
-window.open(link,"_blank");
+    window.open(
+        link,
+        "_blank"
+    );
 
 
 }
