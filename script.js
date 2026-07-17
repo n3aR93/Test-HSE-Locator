@@ -295,7 +295,7 @@ result.innerHTML = `
 
 <br><br>
 
-<button onclick="getLocation()">
+<button onclick="location.reload()">
 Try location again
 </button>
 `;
@@ -382,7 +382,7 @@ result.innerHTML = `
 
 <br><br>
 
-<button onclick="getLocation()">
+<button onclick="location.reload()">
 Try location again
 </button>
 
@@ -462,7 +462,7 @@ ${message}
 
 <br><br>
 
-<button onclick="getLocation()">
+<button onclick="location.reload()">
 Try location again
 </button>
 
