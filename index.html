@@ -1,65 +1,28 @@
-<!DOCTYPE html>
-<html lang="en">
+<h1>HSE RAMS Finder</h1>
 
-<head>
-
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>HSE Site Finder</title>
-
-<link rel="stylesheet" href="style.css">
-
-</head>
+<div id="result">
+📍 Checking your location...
+<br>
+Please wait...
+</div>
 
 
-<body>
+<button onclick="getLocation()">
+Try location again
+</button>
 
 
-<div class="container">
+<br><br>
 
 
-<h1>HSE Site Finder</h1>
+<input id="searchBox" placeholder="Enter postcode or address">
 
-<p>
-Find RAMS documents for your site
-</p>
-
-
-
-<input 
-id="searchBox"
-type="text"
-placeholder="Enter postcode or address"
-autocomplete="off"
->
-
+<button onclick="manualSearch()">
+Search
+</button>
 
 
 <div id="suggestions"></div>
 
 
-
-<button onclick="manualSearch()">
-🔍 Search
-</button>
-
-
-
-<button class="location" onclick="getLocation()">
-📍 Use My Location
-</button>
-
-
-
-<div id="result"></div>
-
-
-</div>
-
-
-
 <script src="script.js"></script>
-
-</body>
-
-</html>
