@@ -6,7 +6,12 @@
 const searchBox = document.getElementById("searchBox");
 
 
-// START AUTOMATIC LOCATION WHEN PAGE OPENS
+
+
+// ===============================
+// START LOCATION ON PAGE OPEN
+// ===============================
+
 
 window.onload = function(){
 
@@ -16,17 +21,234 @@ window.onload = function(){
 
 
 
+
+
 // ===============================
-// AUTO LOCATION
+// LIVE SEARCH SUGGESTIONS
+// ===============================
+
+
+searchBox.addEventListener(
+"input",
+function(){
+
+let value=this.value.trim();
+
+
+if(value.length < 3){
+
+document.getElementById("suggestions").innerHTML="";
+
+return;
+
+}
+
+
+searchSuggestions(value);
+
+
+});
+
+
+
+
+
+async function searchSuggestions(text){
+
+
+let response =
+await fetch("sites.json");
+
+
+let sites =
+await response.json();
+
+
+
+text =
+text.toUpperCase();
+
+
+
+let matches =
+sites.filter(site=>{
+
+
+return (
+
+site.site
+.toUpperCase()
+.includes(text)
+
+
+||
+
+site.postcode
+.toUpperCase()
+.includes(text)
+
+
+);
+
+
+});
+
+
+
+showSuggestions(matches);
+
+
+}
+
+
+
+
+
+
+function showSuggestions(matches){
+
+
+let box =
+document.getElementById("suggestions");
+
+
+box.innerHTML="";
+
+
+
+matches.forEach(site=>{
+
+
+let div =
+document.createElement("div");
+
+
+div.className="suggestion";
+
+
+div.innerHTML =
+`
+<b>${site.site}</b>
+<br>
+${site.postcode}
+`;
+
+
+
+div.onclick=function(){
+
+
+openPDF(site.pdf);
+
+
+};
+
+
+
+box.appendChild(div);
+
+
+
+});
+
+
+}
+
+
+
+
+
+
+
+
+// ===============================
+// ENTER KEY
+// ===============================
+
+
+searchBox.addEventListener(
+"keypress",
+function(e){
+
+
+if(e.key==="Enter"){
+
+
+manualSearch();
+
+
+}
+
+
+});
+
+
+
+
+
+
+
+
+// ===============================
+// MANUAL SEARCH BUTTON
+// ===============================
+
+
+function manualSearch(){
+
+
+let input =
+searchBox.value.trim();
+
+
+
+let result =
+document.getElementById("result");
+
+
+
+if(input===""){
+
+
+result.innerHTML =
+"Please enter postcode or address";
+
+
+return;
+
+
+}
+
+
+
+findSiteByPostcode(input);
+
+
+}
+
+
+
+
+
+
+
+
+// ===============================
+// AUTOMATIC LOCATION
 // ===============================
 
 
 function autoLocation(){
 
-let result = document.getElementById("result");
+
+let result =
+document.getElementById("result");
 
 
-result.innerHTML = `
+
+result.innerHTML =
+
+`
 📍 Checking your location...
 <br>
 Please wait...
@@ -34,16 +256,19 @@ Please wait...
 
 
 
-let timer = setTimeout(()=>{
+
+let timeout = setTimeout(()=>{
 
 
-result.innerHTML = `
+result.innerHTML =
+
+`
 
 ❌ Location unavailable
 
 <br><br>
 
-Please type postcode manually
+Please enter postcode manually
 
 <br><br>
 
@@ -54,7 +279,9 @@ Try location again
 `;
 
 
+
 },8000);
+
 
 
 
@@ -64,11 +291,17 @@ navigator.geolocation.getCurrentPosition(
 async function(position){
 
 
-clearTimeout(timer);
+clearTimeout(timeout);
 
 
-let lat = position.coords.latitude;
-let lon = position.coords.longitude;
+
+let lat =
+position.coords.latitude;
+
+
+let lon =
+position.coords.longitude;
+
 
 
 
@@ -77,7 +310,9 @@ try{
 
 let response =
 await fetch(
+
 `https://api.postcodes.io/postcodes?lat=${lat}&lon=${lon}`
+
 );
 
 
@@ -89,7 +324,7 @@ await response.json();
 
 if(!data.result){
 
-throw "No postcode";
+throw "no postcode";
 
 }
 
@@ -106,16 +341,19 @@ findSiteByPostcode(postcode);
 
 }
 
+
 catch{
 
 
 result.innerHTML =
+
 `
+
 ❌ Could not find postcode
 
 <br><br>
 
-Type postcode manually
+Search manually
 
 `;
 
@@ -125,21 +363,23 @@ Type postcode manually
 },
 
 
-function(error){
+
+function(){
 
 
-clearTimeout(timer);
+clearTimeout(timeout);
+
 
 
 result.innerHTML =
 
 `
 
-❌ Location disabled or unavailable
+❌ Location disabled
 
 <br><br>
 
-Please type postcode manually
+Please enter postcode manually
 
 <br><br>
 
@@ -150,15 +390,20 @@ Try location again
 `;
 
 
+
 },
 
 
-{
-enableHighAccuracy:true,
-timeout:7000,
-maximumAge:0
-}
 
+{
+
+enableHighAccuracy:true,
+
+timeout:7000,
+
+maximumAge:0
+
+}
 
 
 );
@@ -171,50 +416,23 @@ maximumAge:0
 
 
 
+
+
+
 // ===============================
-// MANUAL SEARCH
+// LOCATION BUTTON
 // ===============================
 
 
-searchBox.addEventListener(
-"keypress",
-function(e){
-
-if(e.key==="Enter"){
-
-manualSearch();
-
-}
-
-});
+function getLocation(){
 
 
-
-
-
-function manualSearch(){
-
-
-let input =
-searchBox.value.trim();
-
-
-
-if(input===""){
-
-document.getElementById("result").innerHTML =
-"Enter postcode";
-
-return;
-
-}
-
-
-
-findSiteByPostcode(input);
+autoLocation();
 
 
 }
+
+
 
 
 
@@ -237,9 +455,11 @@ document.getElementById("result");
 
 
 postcode =
+
 postcode
 .replace(/\s/g,"")
 .toUpperCase();
+
 
 
 
@@ -260,13 +480,23 @@ let matches =
 sites.filter(site=>{
 
 
-return site.postcode
+return (
+
+site.postcode
 .replace(/\s/g,"")
 .toUpperCase()
-===postcode;
+
+===
+
+postcode
+
+);
+
 
 
 });
+
+
 
 
 
@@ -284,7 +514,6 @@ result.innerHTML =
 
 <br><br>
 
-Postcode:
 ${postcode}
 
 `;
@@ -293,6 +522,8 @@ return;
 
 
 }
+
+
 
 
 
@@ -333,7 +564,11 @@ return;
 
 
 
+
+
+
 let html =
+
 `
 
 Multiple RAMS found:
@@ -341,6 +576,7 @@ Multiple RAMS found:
 <br><br>
 
 `;
+
 
 
 
@@ -361,7 +597,9 @@ ${site.site}
 
 `;
 
+
 });
+
 
 
 result.innerHTML = html;
@@ -370,22 +608,6 @@ result.innerHTML = html;
 
 }
 
-
-
-
-
-
-
-// ===============================
-// TRY LOCATION BUTTON
-// ===============================
-
-
-function getLocation(){
-
-autoLocation();
-
-}
 
 
 
