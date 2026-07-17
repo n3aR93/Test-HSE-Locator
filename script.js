@@ -1,248 +1,69 @@
-// ===============================
-// HSE SITE FINDER
-// ===============================
+let sites = [];
 
 
-const searchBox =
-document.getElementById("searchBox");
+// LOAD DATABASE
 
+async function loadSites(){
 
+    let response = await fetch("sites.json");
 
-searchBox.addEventListener(
-"input",
-function(){
+    sites = await response.json();
 
-let value=this.value.trim();
-
-
-if(value.length < 3){
-
-document.getElementById("suggestions").innerHTML="";
-
-return;
+    console.log("Sites loaded:", sites.length);
 
 }
 
 
-searchSites(value);
-
-
-});
+loadSites();
 
 
 
-// ENTER KEY SEARCH
+// START LOCATION AUTOMATICALLY
 
-searchBox.addEventListener(
-"keypress",
-function(e){
+window.onload=function(){
 
-if(e.key==="Enter"){
-
-manualSearch();
-
-}
-
-});
-
-
-
-
-
-// ===============================
-// LIVE SUGGESTIONS
-// ===============================
-
-
-async function searchSites(text){
-
-
-let response =
-await fetch("sites.json");
-
-
-let sites =
-await response.json();
-
-
-
-text =
-text.toUpperCase();
-
-
-
-let matches =
-sites.filter(site=>{
-
-
-return (
-
-site.site
-.toUpperCase()
-.includes(text)
-
-||
-
-site.postcode
-.toUpperCase()
-.includes(text)
-
-);
-
-
-});
-
-
-
-showSuggestions(matches);
-
-
-}
-
-
-
-
-
-function showSuggestions(matches){
-
-
-let box =
-document.getElementById("suggestions");
-
-
-box.innerHTML="";
-
-
-
-matches.forEach(site=>{
-
-
-let div =
-document.createElement("div");
-
-
-div.className="suggestion";
-
-
-div.innerHTML=
-`
-<b>${site.site}</b>
-<br>
-${site.postcode}
-`;
-
-
-
-div.onclick=function(){
-
-openPDF(site.pdf);
+    getLocation();
 
 };
 
 
 
-box.appendChild(div);
 
 
-});
-
-
-}
-
-
-
-
-
-
-// ===============================
-// SEARCH BUTTON
-// ===============================
-
-
-async function manualSearch(){
-
-
-let input =
-searchBox.value.trim();
-
-
-
-let result =
-document.getElementById("result");
-
-
-
-if(input===""){
-
-
-result.innerHTML=
-"Please enter postcode or address";
-
-
-return;
-
-
-}
-
-
-
-// postcode format check
-
-let postcodePattern =
-/^[A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2}$/i;
-
-
-
-if(postcodePattern.test(input)===false){
-
-
-result.innerHTML=
-`
-❌ Invalid postcode format
-<br><br>
-Please check and try again
-`;
-
-
-return;
-
-
-}
-
-
-
-findSiteByPostcode(input);
-
-
-
-}
-
-
-
-
-
-
-
-
-// ===============================
-// LOCATION BUTTON
-// ===============================
+// LOCATION SEARCH
 
 
 function getLocation(){
 
 
-let result =
-document.getElementById("result");
-
+let result=document.getElementById("result");
 
 
 result.innerHTML=
 `
-📍 Finding location...
+📍 Finding your location...
 <br>
 Please wait...
 `;
+
+
+
+if(!navigator.geolocation){
+
+
+result.innerHTML=
+`
+❌ Location not supported
+
+<br><br>
+
+Please enter postcode manually
+`;
+
+return;
+
+}
+
 
 
 
@@ -251,12 +72,9 @@ navigator.geolocation.getCurrentPosition(
 async function(position){
 
 
-let lat =
-position.coords.latitude;
+let lat=position.coords.latitude;
 
-
-let lon =
-position.coords.longitude;
+let lon=position.coords.longitude;
 
 
 
@@ -288,18 +106,34 @@ data.result[0].postcode;
 
 
 
-findSiteByPostcode(postcode);
+result.innerHTML=
+`
+📍 Location found:
+${postcode}
+
+<br>
+Searching RAMS...
+`;
+
+
+
+findSite(postcode);
 
 
 
 }
+
 
 catch{
 
 
 result.innerHTML=
 `
-❌ Could not find postcode
+❌ Could not convert location to postcode
+
+<br><br>
+
+Enter postcode manually
 `;
 
 }
@@ -310,12 +144,48 @@ result.innerHTML=
 
 
 
-function(){
+function(error){
+
+
+let message="❌ Location error";
+
+
+if(error.code===1){
+
+message=
+"❌ Location permission denied";
+
+}
+
+if(error.code===2){
+
+message=
+"❌ Location unavailable";
+
+}
+
+if(error.code===3){
+
+message=
+"❌ Location timed out";
+
+}
+
 
 
 result.innerHTML=
 `
-❌ Location permission denied
+${message}
+
+<br><br>
+
+<button onclick="getLocation()">
+Try Again
+</button>
+
+<br><br>
+
+Enter postcode manually
 `;
 
 }
@@ -334,33 +204,17 @@ result.innerHTML=
 
 
 
-// ===============================
-// FIND RAMS
-// ===============================
+
+// FIND SITE BY POSTCODE
 
 
-async function findSiteByPostcode(postcode){
-
-
-
-let result =
-document.getElementById("result");
-
+function findSite(postcode){
 
 
 postcode =
 postcode
 .replace(/\s/g,"")
 .toUpperCase();
-
-
-
-let response =
-await fetch("sites.json");
-
-
-let sites =
-await response.json();
 
 
 
@@ -381,32 +235,15 @@ return site.postcode
 
 
 
-if(matches.length===0){
-
-
-result.innerHTML=
-`
-❌ No RAMS found for this address
-<br><br>
-${postcode}
-`;
-
-
-return;
-
-}
-
-
-
-
-
 if(matches.length===1){
 
 
-result.innerHTML=
+document.getElementById("result").innerHTML=
 `
-✅ RAMS found
+✅ RAMS Found
+
 <br>
+
 Opening document...
 `;
 
@@ -415,11 +252,46 @@ Opening document...
 setTimeout(()=>{
 
 
-openPDF(matches[0].pdf);
+window.open(matches[0].pdf,"_blank");
 
 
 },1000);
 
+
+
+return;
+
+}
+
+
+
+
+
+if(matches.length>1){
+
+
+let html=
+"Multiple sites found:<br><br>";
+
+
+
+matches.forEach(site=>{
+
+
+html+=
+`
+<button onclick="openPDF('${site.pdf}')">
+
+${site.site}
+
+</button>
+<br><br>
+`;
+
+});
+
+
+document.getElementById("result").innerHTML=html;
 
 
 return;
@@ -430,13 +302,84 @@ return;
 
 
 
-
-let html=
+document.getElementById("result").innerHTML=
 `
-Multiple sites found:
+❌ No RAMS found for:
+
+<br>
+
+${postcode}
+
 <br><br>
+
+Please enter postcode manually
 `;
 
+
+
+}
+
+
+
+
+
+
+
+// MANUAL SEARCH
+
+
+function manualSearch(){
+
+
+let text =
+document.getElementById("searchBox").value
+.trim()
+.toUpperCase();
+
+
+
+if(text==="") return;
+
+
+
+let matches =
+sites.filter(site=>{
+
+
+return (
+
+site.site
+.toUpperCase()
+.includes(text)
+
+
+||
+
+site.postcode
+.toUpperCase()
+.includes(text)
+
+
+);
+
+
+});
+
+
+
+
+if(matches.length===1){
+
+
+openPDF(matches[0].pdf);
+
+
+}
+
+else if(matches.length>1){
+
+
+let html="Choose site:<br><br>";
 
 
 matches.forEach(site=>{
@@ -447,12 +390,26 @@ html+=
 <button onclick="openPDF('${site.pdf}')">
 ${site.site}
 </button>
+<br>
 `;
 
 });
 
 
-result.innerHTML=html;
+document.getElementById("suggestions").innerHTML=html;
+
+
+}
+
+else{
+
+
+document.getElementById("suggestions").innerHTML=
+"❌ No matching RAMS";
+
+
+}
+
 
 
 }
