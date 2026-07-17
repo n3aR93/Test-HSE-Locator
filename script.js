@@ -1,68 +1,60 @@
-let sites = [];
+// ===============================
+// HSE SITE FINDER
+// ===============================
 
 
-// LOAD DATABASE
-
-async function loadSites(){
-
-    let response = await fetch("sites.json");
-
-    sites = await response.json();
-
-    console.log("Sites loaded:", sites.length);
-
-}
+const searchBox = document.getElementById("searchBox");
 
 
-loadSites();
+// START AUTOMATIC LOCATION WHEN PAGE OPENS
 
+window.onload = function(){
 
-
-// START LOCATION AUTOMATICALLY
-
-window.onload=function(){
-
-    getLocation();
+    autoLocation();
 
 };
 
 
 
+// ===============================
+// AUTO LOCATION
+// ===============================
 
 
-// LOCATION SEARCH
+function autoLocation(){
+
+let result = document.getElementById("result");
 
 
-function getLocation(){
-
-
-let result=document.getElementById("result");
-
-
-result.innerHTML=
-`
-📍 Finding your location...
+result.innerHTML = `
+📍 Checking your location...
 <br>
 Please wait...
 `;
 
 
 
-if(!navigator.geolocation){
+let timer = setTimeout(()=>{
 
 
-result.innerHTML=
-`
-❌ Location not supported
+result.innerHTML = `
+
+❌ Location unavailable
 
 <br><br>
 
-Please enter postcode manually
+Please type postcode manually
+
+<br><br>
+
+<button onclick="getLocation()">
+Try location again
+</button>
+
 `;
 
-return;
 
-}
+},8000);
 
 
 
@@ -72,9 +64,11 @@ navigator.geolocation.getCurrentPosition(
 async function(position){
 
 
-let lat=position.coords.latitude;
+clearTimeout(timer);
 
-let lon=position.coords.longitude;
+
+let lat = position.coords.latitude;
+let lon = position.coords.longitude;
 
 
 
@@ -95,7 +89,7 @@ await response.json();
 
 if(!data.result){
 
-throw "no postcode";
+throw "No postcode";
 
 }
 
@@ -106,88 +100,63 @@ data.result[0].postcode;
 
 
 
-result.innerHTML=
-`
-📍 Location found:
-${postcode}
-
-<br>
-Searching RAMS...
-`;
-
-
-
-findSite(postcode);
+findSiteByPostcode(postcode);
 
 
 
 }
-
 
 catch{
 
 
-result.innerHTML=
+result.innerHTML =
 `
-❌ Could not convert location to postcode
+❌ Could not find postcode
 
 <br><br>
 
-Enter postcode manually
+Type postcode manually
+
 `;
 
 }
-
 
 
 },
 
 
-
 function(error){
 
 
-let message="❌ Location error";
+clearTimeout(timer);
 
 
-if(error.code===1){
+result.innerHTML =
 
-message=
-"❌ Location permission denied";
-
-}
-
-if(error.code===2){
-
-message=
-"❌ Location unavailable";
-
-}
-
-if(error.code===3){
-
-message=
-"❌ Location timed out";
-
-}
-
-
-
-result.innerHTML=
 `
-${message}
+
+❌ Location disabled or unavailable
+
+<br><br>
+
+Please type postcode manually
 
 <br><br>
 
 <button onclick="getLocation()">
-Try Again
+Try location again
 </button>
 
-<br><br>
-
-Enter postcode manually
 `;
 
+
+},
+
+
+{
+enableHighAccuracy:true,
+timeout:7000,
+maximumAge:0
 }
 
 
@@ -202,19 +171,88 @@ Enter postcode manually
 
 
 
+// ===============================
+// MANUAL SEARCH
+// ===============================
+
+
+searchBox.addEventListener(
+"keypress",
+function(e){
+
+if(e.key==="Enter"){
+
+manualSearch();
+
+}
+
+});
 
 
 
-// FIND SITE BY POSTCODE
 
 
-function findSite(postcode){
+function manualSearch(){
+
+
+let input =
+searchBox.value.trim();
+
+
+
+if(input===""){
+
+document.getElementById("result").innerHTML =
+"Enter postcode";
+
+return;
+
+}
+
+
+
+findSiteByPostcode(input);
+
+
+}
+
+
+
+
+
+
+
+// ===============================
+// FIND RAMS
+// ===============================
+
+
+async function findSiteByPostcode(postcode){
+
+
+
+let result =
+document.getElementById("result");
+
 
 
 postcode =
 postcode
 .replace(/\s/g,"")
 .toUpperCase();
+
+
+
+
+let response =
+await fetch("sites.json");
+
+
+
+let sites =
+await response.json();
+
+
 
 
 
@@ -228,8 +266,33 @@ return site.postcode
 ===postcode;
 
 
-
 });
+
+
+
+
+
+
+if(matches.length===0){
+
+
+result.innerHTML =
+
+`
+
+❌ No RAMS found
+
+<br><br>
+
+Postcode:
+${postcode}
+
+`;
+
+return;
+
+
+}
 
 
 
@@ -238,13 +301,16 @@ return site.postcode
 if(matches.length===1){
 
 
-document.getElementById("result").innerHTML=
+result.innerHTML =
+
 `
-✅ RAMS Found
+
+✅ RAMS found
 
 <br>
 
-Opening document...
+Opening PDF...
+
 `;
 
 
@@ -252,163 +318,53 @@ Opening document...
 setTimeout(()=>{
 
 
-window.open(matches[0].pdf,"_blank");
-
-
-},1000);
-
-
-
-return;
-
-}
-
-
-
-
-
-if(matches.length>1){
-
-
-let html=
-"Multiple sites found:<br><br>";
-
-
-
-matches.forEach(site=>{
-
-
-html+=
-`
-<button onclick="openPDF('${site.pdf}')">
-
-${site.site}
-
-</button>
-<br><br>
-`;
-
-});
-
-
-document.getElementById("result").innerHTML=html;
-
-
-return;
-
-
-}
-
-
-
-
-document.getElementById("result").innerHTML=
-`
-❌ No RAMS found for:
-
-<br>
-
-${postcode}
-
-<br><br>
-
-Please enter postcode manually
-`;
-
-
-
-}
-
-
-
-
-
-
-
-// MANUAL SEARCH
-
-
-function manualSearch(){
-
-
-let text =
-document.getElementById("searchBox").value
-.trim()
-.toUpperCase();
-
-
-
-if(text==="") return;
-
-
-
-let matches =
-sites.filter(site=>{
-
-
-return (
-
-site.site
-.toUpperCase()
-.includes(text)
-
-
-||
-
-site.postcode
-.toUpperCase()
-.includes(text)
-
-
-);
-
-
-});
-
-
-
-
-if(matches.length===1){
-
-
 openPDF(matches[0].pdf);
 
 
+},800);
+
+
+
+return;
+
+
 }
 
-else if(matches.length>1){
 
 
-let html="Choose site:<br><br>";
+
+let html =
+`
+
+Multiple RAMS found:
+
+<br><br>
+
+`;
+
 
 
 matches.forEach(site=>{
 
 
-html+=
+html +=
+
 `
+
 <button onclick="openPDF('${site.pdf}')">
+
 ${site.site}
+
 </button>
+
 <br>
+
 `;
 
 });
 
 
-document.getElementById("suggestions").innerHTML=html;
-
-
-}
-
-else{
-
-
-document.getElementById("suggestions").innerHTML=
-"❌ No matching RAMS";
-
-
-}
+result.innerHTML = html;
 
 
 
@@ -418,6 +374,27 @@ document.getElementById("suggestions").innerHTML=
 
 
 
+
+
+// ===============================
+// TRY LOCATION BUTTON
+// ===============================
+
+
+function getLocation(){
+
+autoLocation();
+
+}
+
+
+
+
+
+
+// ===============================
+// OPEN PDF
+// ===============================
 
 
 function openPDF(link){
