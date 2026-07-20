@@ -2,6 +2,30 @@
 // HSE SITE FINDER
 // ===============================
 
+// ===============================
+// START SCREEN
+// ===============================
+
+function showStartMenu() {
+
+    result.innerHTML = `
+        <h3>Find your RAMS</h3>
+
+        <button
+            onclick="getLocation()"
+            style="width:100%;padding:15px;font-size:18px;margin:10px 0;">
+            📍 Find RAMS by Location
+        </button>
+
+        <button
+            onclick="showManualSearch()"
+            style="width:100%;padding:15px;font-size:18px;">
+            ⌨️ Enter Postcode Manually
+        </button>
+    `;
+
+}
+
 // LOAD ELEMENTS
 
 const searchBox = document.getElementById("searchBox");
