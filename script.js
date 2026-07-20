@@ -1,50 +1,13 @@
 // ===============================
-// HSE SITE FINDER
+// HSE RAMS FINDER
 // ===============================
 
+
+// ELEMENTS
 
 const searchBox = document.getElementById("searchBox");
 const result = document.getElementById("result");
-
-const manualButton = document.getElementById("manualButton");
-const locationButton = document.getElementById("locationButton");
-const searchButton = document.getElementById("searchButton");
-
-
-
-// ===============================
-// START SCREEN
-// ===============================
-
-window.onload = function(){
-
-    result.innerHTML = `
-    Choose how you want to find RAMS
-    `;
-
-};
-
-
-
-// ===============================
-// MANUAL SEARCH BUTTON
-// ===============================
-
-function showManualSearch(){
-
-    searchBox.style.display = "block";
-    searchButton.style.display = "block";
-
-    manualButton.style.display = "none";
-    locationButton.style.display = "none";
-
-    result.innerHTML = `
-    Enter postcode and press Open RAMS
-    `;
-
-    searchBox.focus();
-
-}
+const manualBox = document.querySelector(".manual");
 
 
 
@@ -52,7 +15,8 @@ function showManualSearch(){
 // GET POSTCODE
 // ===============================
 
-function getPostcode(address){
+function getPostcode(address) {
+
 
     let match = address.match(
         /[A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2}/i
@@ -74,23 +38,15 @@ function getPostcode(address){
 
 
 
-
 // ===============================
-// ENTER KEY
+// START LOCATION SEARCH
 // ===============================
 
-searchBox.addEventListener(
-"keypress",
-function(e){
+window.onload = function(){
 
-    if(e.key==="Enter"){
+    getLocation();
 
-        manualSearch();
-
-    }
-
-});
-
+};
 
 
 
@@ -105,25 +61,30 @@ function manualSearch(){
     searchBox.value.trim();
 
 
+
     let postcode =
     getPostcode(input);
 
 
+
     if(!postcode){
 
-        result.innerHTML =
-        "Please enter a valid postcode";
+
+        result.innerHTML = `
+        ❌ Please enter a valid postcode
+        `;
+
 
         return;
 
     }
 
 
+
     findSiteByPostcode(postcode);
 
 
 }
-
 
 
 
@@ -135,14 +96,29 @@ function getLocation(){
 
 
     result.innerHTML = `
-    📍 Checking location...
+
+    📍 Checking your location...
+
     `;
+
+
+
+    if(!navigator.geolocation){
+
+
+        showManualOption();
+
+        return;
+
+    }
+
 
 
     navigator.geolocation.getCurrentPosition(
 
 
     async function(position){
+
 
 
         let lat =
@@ -155,9 +131,13 @@ function getLocation(){
 
 
         result.innerHTML = `
+
         📍 Location found
+
         <br>
+
         Finding postcode...
+
         `;
 
 
@@ -171,8 +151,17 @@ function getLocation(){
             );
 
 
+
             let data =
             await response.json();
+
+
+
+            if(!data.result){
+
+                throw "No postcode";
+
+            }
 
 
 
@@ -193,8 +182,7 @@ function getLocation(){
         catch{
 
 
-            result.innerHTML =
-            "❌ Could not find postcode";
+            showManualOption();
 
 
         }
@@ -208,30 +196,52 @@ function getLocation(){
     function(){
 
 
-        result.innerHTML = `
-
-        ❌ Location permission denied
-
-        <br><br>
-
-        Please allow location or use manual search
-
-        `;
+        showManualOption();
 
 
     },
 
 
+
     {
 
         enableHighAccuracy:true,
+
         timeout:10000,
+
         maximumAge:0
 
     }
 
 
     );
+
+
+}
+
+
+
+
+// ===============================
+// SHOW MANUAL OPTION
+// ===============================
+
+function showManualOption(){
+
+
+    result.innerHTML = `
+
+    ❌ Could not find your location
+
+    <br><br>
+
+    Please enter postcode manually
+
+    `;
+
+
+    manualBox.style.display = "block";
+
 
 }
 
@@ -245,8 +255,16 @@ function getLocation(){
 async function findSiteByPostcode(postcode){
 
 
+    postcode =
+    postcode
+    .replace(/\s/g,"")
+    .toUpperCase();
+
+
+
     let response =
     await fetch("sites.json");
+
 
 
     let sites =
@@ -254,40 +272,64 @@ async function findSiteByPostcode(postcode){
 
 
 
+
     let matches =
-    sites.filter(site =>
-        getPostcode(site.address) === postcode
-    );
+    sites.filter(site=>{
+
+
+        return getPostcode(site.address)
+        === postcode;
+
+
+    });
+
+
 
 
 
     if(matches.length===0){
 
+
         result.innerHTML =
-        `❌ No RAMS found for ${postcode}`;
+        `
+        ❌ No RAMS found for ${postcode}
+        `;
+
 
         return;
 
     }
 
 
+
+
+
+    // ONE RAMS
 
     if(matches.length===1){
 
 
         result.innerHTML =
         `
+
         ✅ RAMS found
+
         <br>
+
         Opening PDF...
+
         `;
+
 
 
         setTimeout(()=>{
 
+
             openPDF(matches[0].pdf);
 
+
         },500);
+
 
 
         return;
@@ -296,23 +338,40 @@ async function findSiteByPostcode(postcode){
 
 
 
+
+
+
+
+    // MULTIPLE RAMS
+
     let html =
     `
+
     <h3>Select RAMS</h3>
+
     `;
+
 
 
     matches.forEach(site=>{
 
 
         html +=
+
         `
-        <button onclick="openPDF('${site.pdf}')">
+
+        <button
+        onclick="openPDF('${site.pdf}')"
+        style="
+        width:100%;
+        padding:12px;
+        margin:8px 0;
+        ">
 
         ${site.address}
 
         </button>
-        <br><br>
+
         `;
 
 
@@ -323,7 +382,9 @@ async function findSiteByPostcode(postcode){
     result.innerHTML = html;
 
 
+
 }
+
 
 
 
@@ -334,6 +395,8 @@ async function findSiteByPostcode(postcode){
 
 function openPDF(link){
 
+
     window.open(link,"_blank");
+
 
 }
