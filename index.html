@@ -18,29 +18,32 @@
 
 <h1>HSE RAMS Finder</h1>
 
-
 <div id="result"></div>
-
 
 <div class="manual">
 
 <input 
 id="searchBox"
-placeholder="Enter postcode or address">
+placeholder="Enter postcode"
+style="display:none;">
 
+<button id="manualButton" onclick="showManualSearch()">
+Open RAMS 
+</button>
 
-<button onclick="manualSearch()">
+<button id="locationButton" onclick="getLocation()">
+Open RAMS using Location 📍
+</button>
+
+<button id="searchButton" onclick="manualSearch()" style="display:none;">
 Open RAMS
 </button>
 
 </div>
 
-
 </div>
 
-
 <script src="script.js"></script>
-
 
 </body>
 
