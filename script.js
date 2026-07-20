@@ -3,69 +3,44 @@
 // ===============================
 
 
-// LOAD ELEMENTS
-
 const searchBox = document.getElementById("searchBox");
 const result = document.getElementById("result");
 
+const manualButton = document.getElementById("manualButton");
+const locationButton = document.getElementById("locationButton");
+const searchButton = document.getElementById("searchButton");
 
-// Hide manual search at start
-
-searchBox.style.display = "none";
-
-document.querySelector(".manual button").style.display = "none";
 
 
 // ===============================
-// START MENU
+// START SCREEN
 // ===============================
 
-function showStartMenu() {
+window.onload = function(){
 
     result.innerHTML = `
-
-    <h3>Find your RAMS</h3>
-
-    <button 
-    onclick="getLocation()"
-    style="width:100%;padding:15px;font-size:18px;margin:10px 0;">
-    
-    📍 Find RAMS by Location
-    
-    </button>
-
-
-    <button 
-    onclick="showManualSearch()"
-    style="width:100%;padding:15px;font-size:18px;">
-    
-    ⌨️ Enter Postcode Manually
-    
-    </button>
-
+    Choose how you want to find RAMS
     `;
 
-}
+};
+
 
 
 // ===============================
-// MANUAL SEARCH SCREEN
+// MANUAL SEARCH BUTTON
 // ===============================
 
-function showManualSearch() {
-
-
-    result.innerHTML = `
-
-    <h3>Enter postcode</h3>
-
-    `;
-
+function showManualSearch(){
 
     searchBox.style.display = "block";
+    searchButton.style.display = "block";
 
-    document.querySelector(".manual button").style.display = "block";
+    manualButton.style.display = "none";
+    locationButton.style.display = "none";
 
+    result.innerHTML = `
+    Enter postcode and press Open RAMS
+    `;
 
     searchBox.focus();
 
@@ -77,8 +52,7 @@ function showManualSearch() {
 // GET POSTCODE
 // ===============================
 
-function getPostcode(address) {
-
+function getPostcode(address){
 
     let match = address.match(
         /[A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2}/i
@@ -100,6 +74,7 @@ function getPostcode(address) {
 
 
 
+
 // ===============================
 // ENTER KEY
 // ===============================
@@ -108,7 +83,7 @@ searchBox.addEventListener(
 "keypress",
 function(e){
 
-    if(e.key === "Enter"){
+    if(e.key==="Enter"){
 
         manualSearch();
 
@@ -123,48 +98,31 @@ function(e){
 // MANUAL SEARCH
 // ===============================
 
-async function manualSearch(){
+function manualSearch(){
 
 
-    let input = searchBox.value.trim();
+    let input =
+    searchBox.value.trim();
 
 
-
-    if(input === ""){
-
-
-        result.innerHTML =
-        "Please enter a postcode";
-
-
-        return;
-
-    }
-
-
-
-    let postcode = getPostcode(input);
-
+    let postcode =
+    getPostcode(input);
 
 
     if(!postcode){
 
-
         result.innerHTML =
-        "Please enter a valid full postcode";
-
+        "Please enter a valid postcode";
 
         return;
 
     }
-
 
 
     findSiteByPostcode(postcode);
 
 
 }
-
 
 
 
@@ -176,30 +134,9 @@ async function manualSearch(){
 function getLocation(){
 
 
-
     result.innerHTML = `
-
-    📍 Checking your location...
-
-    <br><br>
-
-    Please allow location access
-
+    📍 Checking location...
     `;
-
-
-
-    if(!navigator.geolocation){
-
-
-        result.innerHTML =
-        "❌ Location not supported";
-
-
-        return;
-
-    }
-
 
 
     navigator.geolocation.getCurrentPosition(
@@ -208,10 +145,8 @@ function getLocation(){
     async function(position){
 
 
-
         let lat =
         position.coords.latitude;
-
 
 
         let lon =
@@ -220,13 +155,9 @@ function getLocation(){
 
 
         result.innerHTML = `
-
         📍 Location found
-
         <br>
-
         Finding postcode...
-
         `;
 
 
@@ -240,17 +171,8 @@ function getLocation(){
             );
 
 
-
             let data =
             await response.json();
-
-
-
-            if(!data.result){
-
-                throw "No postcode";
-
-            }
 
 
 
@@ -271,17 +193,9 @@ function getLocation(){
         catch{
 
 
-            result.innerHTML = `
+            result.innerHTML =
+            "❌ Could not find postcode";
 
-            ❌ Could not find postcode
-
-            <br><br>
-
-            Please use manual search
-
-            `;
-
-            showManualSearch();
 
         }
 
@@ -291,8 +205,7 @@ function getLocation(){
 
 
 
-    function(error){
-
+    function(){
 
 
         result.innerHTML = `
@@ -306,27 +219,19 @@ function getLocation(){
         `;
 
 
-        showManualSearch();
-
-
-
     },
 
 
     {
 
         enableHighAccuracy:true,
-
         timeout:10000,
-
         maximumAge:0
 
     }
 
 
-
     );
-
 
 }
 
@@ -340,16 +245,8 @@ function getLocation(){
 async function findSiteByPostcode(postcode){
 
 
-    postcode =
-    postcode
-    .replace(/\s/g,"")
-    .toUpperCase();
-
-
-
     let response =
     await fetch("sites.json");
-
 
 
     let sites =
@@ -358,24 +255,16 @@ async function findSiteByPostcode(postcode){
 
 
     let matches =
-    sites.filter(site=>{
-
-
-        return getPostcode(site.address)
-        === postcode;
-
-
-    });
+    sites.filter(site =>
+        getPostcode(site.address) === postcode
+    );
 
 
 
-
-    if(matches.length === 0){
-
+    if(matches.length===0){
 
         result.innerHTML =
         `❌ No RAMS found for ${postcode}`;
-
 
         return;
 
@@ -383,80 +272,47 @@ async function findSiteByPostcode(postcode){
 
 
 
+    if(matches.length===1){
 
 
-    // ONE RAMS
-
-    if(matches.length === 1){
-
-
-        result.innerHTML = `
-
+        result.innerHTML =
+        `
         ✅ RAMS found
-
         <br>
-
         Opening PDF...
-
         `;
 
 
         setTimeout(()=>{
 
-
             openPDF(matches[0].pdf);
-
 
         },500);
 
 
-
         return;
-
 
     }
 
 
 
-
-
-
-    // MULTIPLE RAMS
-
-
-    let html = `
-
+    let html =
+    `
     <h3>Select RAMS</h3>
-
-    <p>
-    ${matches.length} jobs found for ${postcode}
-    </p>
-
     `;
-
 
 
     matches.forEach(site=>{
 
 
-        html += `
-
-        <button
-
-        onclick="openPDF('${site.pdf}')"
-
-        style="
-        display:block;
-        width:100%;
-        margin:10px 0;
-        padding:12px;
-        font-size:16px;
-        ">
+        html +=
+        `
+        <button onclick="openPDF('${site.pdf}')">
 
         ${site.address}
 
         </button>
-
+        <br><br>
         `;
 
 
@@ -478,20 +334,6 @@ async function findSiteByPostcode(postcode){
 
 function openPDF(link){
 
-
     window.open(link,"_blank");
 
-
 }
-
-
-
-// ===============================
-// START PAGE
-// ===============================
-
-window.onload = function(){
-
-    showStartMenu();
-
-};
