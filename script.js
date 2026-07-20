@@ -228,16 +228,21 @@ function getLocation() {
 
 async function findSiteByPostcode(postcode) {
 
-    postcode = postcode
-        .replace(/\s/g, "")
-        .toUpperCase();
+    postcode = postcode.replace(/\s/g, "").toUpperCase().trim();
 
     let response = await fetch("sites.json");
     let sites = await response.json();
 
-    let matches = sites.filter(site =>
-        getPostcode(site.address) === postcode
-    );
+    let matches = sites.filter(site => {
+
+        let sitePostcode = getPostcode(site.address)
+            .replace(/\s/g, "")
+            .toUpperCase()
+            .trim();
+
+        return sitePostcode === postcode;
+
+    });
 
     if (matches.length === 0) {
 
@@ -246,9 +251,10 @@ async function findSiteByPostcode(postcode) {
         `;
 
         return;
+
     }
 
-    // Only one RAMS
+    // One RAMS
     if (matches.length === 1) {
 
         result.innerHTML = `
@@ -262,21 +268,21 @@ async function findSiteByPostcode(postcode) {
         }, 500);
 
         return;
+
     }
 
     // Multiple RAMS
     let html = `
-    <b>${matches.length} RAMS found for ${postcode}</b>
-    <br><br>
-    Please choose one:
-    <br><br>
+    <h3>Select a RAMS</h3>
+    <p>${matches.length} jobs were found for postcode <b>${postcode}</b>.</p>
     `;
 
     matches.forEach(site => {
 
         html += `
-        <button onclick="openPDF('${site.pdf}')"
-                style="display:block;width:100%;margin:8px 0;padding:12px;font-size:16px;cursor:pointer;">
+        <button
+            style="display:block;width:100%;margin:10px 0;padding:12px;font-size:16px;cursor:pointer;"
+            onclick="openPDF('${site.pdf}')">
             ${site.address}
         </button>
         `;
