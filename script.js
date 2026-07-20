@@ -17,7 +17,6 @@ const manualBox = document.querySelector(".manual");
 
 function getPostcode(address) {
 
-
     let match = address.match(
         /[A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2}/i
     );
@@ -57,13 +56,10 @@ window.onload = function(){
 function manualSearch(){
 
 
-    let input =
-    searchBox.value.trim();
+    let input = searchBox.value.trim();
 
 
-
-    let postcode =
-    getPostcode(input);
+    let postcode = getPostcode(input);
 
 
 
@@ -229,9 +225,7 @@ function getLocation(){
 function showManualOption(){
 
 
-    result.innerHTML = `
-
-    ❌ Could not find your location
+    result.innerHTML += `
 
     <br><br>
 
@@ -273,6 +267,7 @@ async function findSiteByPostcode(postcode){
 
 
 
+
     let matches =
     sites.filter(site=>{
 
@@ -287,13 +282,25 @@ async function findSiteByPostcode(postcode){
 
 
 
+
+    // NO RAMS FOUND
+
     if(matches.length===0){
 
 
         result.innerHTML =
         `
+
         ❌ No RAMS found for ${postcode}
+
+        <br><br>
+
+        You can try another postcode manually.
+
         `;
+
+
+        manualBox.style.display = "block";
 
 
         return;
@@ -335,7 +342,6 @@ async function findSiteByPostcode(postcode){
         return;
 
     }
-
 
 
 
