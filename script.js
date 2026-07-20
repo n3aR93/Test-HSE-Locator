@@ -233,36 +233,57 @@ async function findSiteByPostcode(postcode) {
         .toUpperCase();
 
     let response = await fetch("sites.json");
-
     let sites = await response.json();
 
-    let match = sites.find(site => {
+    let matches = sites.filter(site =>
+        getPostcode(site.address) === postcode
+    );
 
-        return getPostcode(site.address) === postcode;
-
-    });
-
-    if (!match) {
+    if (matches.length === 0) {
 
         result.innerHTML = `
         ❌ No RAMS found for ${postcode}
         `;
 
         return;
-
     }
 
-    result.innerHTML = `
-    ✅ RAMS found
-    <br>
-    Opening PDF...
+    // Only one RAMS
+    if (matches.length === 1) {
+
+        result.innerHTML = `
+        ✅ RAMS found
+        <br>
+        Opening PDF...
+        `;
+
+        setTimeout(() => {
+            openPDF(matches[0].pdf);
+        }, 500);
+
+        return;
+    }
+
+    // Multiple RAMS
+    let html = `
+    <b>${matches.length} RAMS found for ${postcode}</b>
+    <br><br>
+    Please choose one:
+    <br><br>
     `;
 
-    setTimeout(() => {
+    matches.forEach(site => {
 
-        openPDF(match.pdf);
+        html += `
+        <button onclick="openPDF('${site.pdf}')"
+                style="display:block;width:100%;margin:8px 0;padding:12px;font-size:16px;cursor:pointer;">
+            ${site.address}
+        </button>
+        `;
 
-    }, 500);
+    });
+
+    result.innerHTML = html;
 
 }
 
